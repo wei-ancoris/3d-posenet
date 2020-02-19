@@ -7,7 +7,6 @@ const fs = require("fs");
 import styles from './styles.css';
 
 import Joints from './joints';
-import GraphicsEngine from './graphics';
 import PoseNet from './posenet';
 
 /**
@@ -34,10 +33,7 @@ class App extends React.Component {
      */
     async componentDidMount() {
         this.joints = new Joints();
-        this.graphics_engine = new GraphicsEngine(this.refs.babylon, this.joints);
-        this.posenet = new PoseNet(this.joints, this.graphics_engine, this.refs);
-        const descContent = fs.readFileSync("./description.md", "utf-8");
-        this.refs.description.innerHTML = markdown.toHTML(descContent);
+        this.posenet = new PoseNet(this.joints, this.refs);
         await this.posenet.loadNetwork();
         this.setState({loading: false});
         this.posenet.startPrediction().then((webcam) => {
@@ -56,14 +52,8 @@ class App extends React.Component {
     render() {
         return (
             <div id="container">
-                <h2 className="text-center" id="h2">
-                    Controlling Virtual Character Through WebCam
-                </h2>
-                <h5 id="h5">
-                    Note: make sure to give webcam ACCESS and only a single person is in the scene. Otherwise, the results might be inaccurate.
-                </h5>
                 <div className="row"  id="row">
-                    <div className="col-6">
+                    <div className="col-7">
                         <div className="float-right"
                             style={{display:this.state.loading ? 'none' : 'block'}}>
                             <video ref="video" id="video" playsInline/>
@@ -72,12 +62,9 @@ class App extends React.Component {
                             {!this.state.webcam && <WeCamAccess/>}
                         </div>
                         <div id="loader" style={{ display: !this.state.loading ? 'none' : 'block' }}>
-                            <h3 id="loadTitle">Tensorflow Model loading ...</h3>
+                            <h3 id="loadTitle">Loading ...</h3>
                             <ReactLoading type="cylon" color="grey" height={'20%'} width={'20%'} id="reactLoader"/>
                         </div>
-                    </div>
-                    <div className="col-6">
-                        <canvas ref="babylon" width={500} height={500} />
                     </div>
                 </div>
                 <div ref="description" id="description"/>

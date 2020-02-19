@@ -18,10 +18,9 @@ export default class PoseNet{
   /**
    * the class constructor
    * @param {Joints} joints processes raw joints data from posenet
-   * @param {GraphicsEngine} graphicsEngine to which joints data will be fed
    * @param {array} _htmlelems that will be used to present results
    */
-  constructor(joints, graphicsEngine, _htmlelems){
+  constructor(joints, _htmlelems){
     this.state = {
       algorithm: 'single-pose',
       input: {
@@ -37,8 +36,6 @@ export default class PoseNet{
     this.htmlElements = _htmlelems;
     this.joints = joints;
     this.transform = new Transform(this.joints);
-    this.graphics_engine = graphicsEngine;
-    this.graphics_engine.render();
   }
   
   /** Checks whether the device is mobile or not */
@@ -130,12 +127,43 @@ export default class PoseNet{
         if (score >= minPoseConfidence) {
           self.transform.updateKeypoints(keypoints, minPartConfidence);
           const head = self.transform.head();
-          const shouldMoveFarther = drawKeypoints(keypoints.slice(0, 7), minPartConfidence, ctx);
+          var topPoints = keypoints.slice(0, 7);
+          var nose = topPoints.find(point => point.part === 'nose');
+          var leftEar = topPoints.find(point => point.part === 'leftEar');
+          var rightEar = topPoints.find(point => point.part === 'rightEar');
+          var leftShoulder = topPoints.find(point => point.part === 'leftShoulder');
+          var rightShoulder = topPoints.find(point => point.part === 'rightShoulder');
+
+          var leftEarBottom = leftEar;
+          leftEarBottom.position.y = nose.position.y;
+          leftEarBottom.part = 'leftEarBottom';
+
+          var rightEarBottom = rightEar;
+          rightEarBottom.position.y = nose.position.y;
+          rightEarBottom.part = 'rightEarBottom';
+
+          var neckLeft = leftShoulder;
+          neckLeft.position.x = leftEar.position.x;
+          neckLeft.position.y = neckLeft.position.y - (leftShoulder.position.y - nose.position.y) / 2;
+          neckLeft.part = 'neckLeft';
+
+          var neckRight = rightShoulder;
+          neckRight.position.x = rightEar.position.x;
+          neckRight.position.y = neckRight.position.y - (rightShoulder.position.y - nose.position.y) / 2;
+          neckRight.part = 'neckRight';
+
+          topPoints.push(leftEarBottom);
+          topPoints.push(rightEarBottom);
+          topPoints.push(neckLeft);
+          topPoints.push(neckRight);
+
+
+          const shouldMoveFarther = drawKeypoints(topPoints, minPartConfidence, ctx);
           if (shouldMoveFarther){
             ctx.font = "30px Arial";
             ctx.fillText("Please Move Farther", Math.round(videoHeight / 2) - 100, Math.round(videoWidth / 2));
           }
-          drawSkeleton(keypoints, minPartConfidence, ctx);
+          //drawSkeleton(keypoints, minPartConfidence, ctx);
         }
       });
       requestAnimationFrame(poseDetectionFrame);
