@@ -39,6 +39,7 @@ export default class PoseNet {
     this.transform = new Transform(this.joints);
     this.images = images;
     this.loadImages();
+    this.previousPosition = {};
   }
 
   /** Checks whether the device is mobile or not */
@@ -90,26 +91,9 @@ export default class PoseNet {
     let leftShoulder = topPoints.find((point) => point.part === 'leftShoulder');
     let rightShoulder = topPoints.find((point) => point.part === 'rightShoulder');
 
-    let leftEarBottom = leftEar;
-    leftEarBottom.position.y = nose.position.y;
-    leftEarBottom.part = 'leftEarBottom';
+    let neckLeft = {score: leftShoulder.score, part: 'neckLeft', position: {x: leftEar.position.x, y: leftShoulder.position.y - (leftShoulder.position.y - nose.position.y) / 2}};
+    let neckRight = {score: rightShoulder.score, part: 'neckRight', position: {x: rightEar.position.x, y: rightShoulder.position.y - (rightShoulder.position.y - nose.position.y) / 2}};
 
-    let rightEarBottom = rightEar;
-    rightEarBottom.position.y = nose.position.y;
-    rightEarBottom.part = 'rightEarBottom';
-
-    let neckLeft = leftShoulder;
-    neckLeft.position.x = leftEar.position.x;
-    neckLeft.position.y = neckLeft.position.y - (leftShoulder.position.y - nose.position.y) / 2;
-    neckLeft.part = 'neckLeft';
-
-    let neckRight = rightShoulder;
-    neckRight.position.x = rightEar.position.x;
-    neckRight.position.y = neckRight.position.y - (rightShoulder.position.y - nose.position.y) / 2;
-    neckRight.part = 'neckRight';
-
-    topPoints.push(leftEarBottom);
-    topPoints.push(rightEarBottom);
     topPoints.push(neckLeft);
     topPoints.push(neckRight);
 
@@ -118,8 +102,8 @@ export default class PoseNet {
 
   loadImages() {
     this.images.forEach((image, index) => {
-      console.log(image.url);
-      jimp.read(image.url).then((jImg) => {
+      jimp.read(image.url).then(async (jImg) => {
+        await jImg.resize(image.realWidth, image.realHeight);
         this.images[index].jImg = jImg;
       }).catch((err) => {
         console.error(err);
@@ -127,19 +111,31 @@ export default class PoseNet {
     });
   }
 
+  decimal(num) {
+    //num = num / 10;
+    //return Math.round(num) * 10;
+    return num;
+  }
+
   drawImages(ctx, topPoints) {
     const self = this;
     this.images.forEach((image) => {
-      let leftEarBottom = topPoints.find((point) => point.part === 'leftEarBottom');
-      let rightEarBottom = topPoints.find((point) => point.part === 'rightEarBototm');
+      let leftEar = topPoints.find((point) => point.part === 'leftEar' && point.score > self.state.singlePoseDetection.minPartConfidence);
+      let rightEar = topPoints.find((point) => point.part === 'rightEar' && point.score > self.state.singlePoseDetection.minPartConfidence);
+      let jImg = image.jImg;
       
       if (image.type.includes('stud')) {
-        if (leftEarBottom) {
-          self.drawJimp(ctx, image.jImg, leftEarBottom.position);
+        if (leftEar) {
+          let leftPosition = {x: leftEar.position.x, y: leftEar.position.y};
+          leftPosition.x -= (image.realWidth / 2);
+          self.drawJimp(ctx, jImg, leftPosition, 'leftEar');
         }
-        if (rightEarBottom) {
-          self.drawJimp(ctx, image.jImg, rightEarBottom.position);
+        if (rightEar) {
+          let rightPosition = {x: rightEar.position.x, y: rightEar.position.y};
+          rightPosition.x -= (image.realWidth / 2);
+          self.drawJimp(ctx, jImg, rightPosition, 'rightEar');
         }
+
       } else if (image.type.includes('earring')) {
 
       } else if (image.type.includes('necklace')) {
@@ -152,14 +148,22 @@ export default class PoseNet {
     });
   }
 
-  async drawJimp(ctx, jimpImage, position) {
+  async drawJimp(ctx, jimpImage, position, positionName) {
+    const self = this;
     if (! jimpImage || ! position) {
       return;
     }
-    await jimpImage.resize(23, 30);
+
     let img = new Image(jimpImage.bitmap.width, jimpImage.bitmap.height);
     img.onload = () => {
-      ctx.drawImage(img, parseInt(position.x), parseInt(position.y));
+      if (positionName in self.previousPosition) {
+        if (Math.abs(self.previousPosition[positionName].x - position.x) > 10 || Math.abs(self.previousPosition[positionName].y - position.y) > 12) {
+          self.previousPosition[positionName] = position;
+        }
+      } else {
+        self.previousPosition[positionName] = position;
+      }
+      ctx.drawImage(img, this.decimal(self.previousPosition[positionName].x), this.decimal(self.previousPosition[positionName].y));
     };
     jimpImage.getBase64(Jimp.AUTO, (err, src) => {
       img.src = src;
