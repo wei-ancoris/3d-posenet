@@ -127,12 +127,14 @@ export default class PoseNet {
       if (image.type.includes('stud')) {
         if (leftEar) {
           let leftPosition = {x: leftEar.position.x, y: leftEar.position.y};
-          leftPosition.x -= (image.realWidth / 2);
+          leftPosition.x -= (image.realWidth / 2) - 3;
+          leftPosition.y += 10;
           self.drawJimp(ctx, jImg, leftPosition, 'leftEar');
         }
         if (rightEar) {
           let rightPosition = {x: rightEar.position.x, y: rightEar.position.y};
-          rightPosition.x -= (image.realWidth / 2);
+          rightPosition.x -= (image.realWidth / 2) - 3;
+          rightPosition.y += 10;
           self.drawJimp(ctx, jImg, rightPosition, 'rightEar');
         }
 
