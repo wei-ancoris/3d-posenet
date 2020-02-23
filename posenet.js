@@ -1,26 +1,27 @@
 import * as posenet from '@tensorflow-models/posenet';
-import {drawKeypoints, drawSkeleton} from './demo_util';
+import { drawKeypoints } from './demo_util';
+import jimp from 'jimp';
 
 import Transform from './tranform';
 
-const videoWidth = 500;
-const videoHeight = 500;
+const videoWidth = 480;
+const videoHeight = 640;
 
 navigator.getUserMedia = navigator.getUserMedia ||
-    navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+  navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
 /**
- * Posenet class for loading posenet 
+ * Posenet class for loading posenet
  * and running inferences on it
  */
-export default class PoseNet{
+export default class PoseNet {
 
   /**
    * the class constructor
    * @param {Joints} joints processes raw joints data from posenet
    * @param {array} _htmlelems that will be used to present results
    */
-  constructor(joints, _htmlelems){
+  constructor(joints, _htmlelems, images) {
     this.state = {
       algorithm: 'single-pose',
       input: {
@@ -36,8 +37,10 @@ export default class PoseNet{
     this.htmlElements = _htmlelems;
     this.joints = joints;
     this.transform = new Transform(this.joints);
+    this.images = images;
+    this.loadImages();
   }
-  
+
   /** Checks whether the device is mobile or not */
   isMobile() {
     const mobile = /Android/i.test(navigator.userAgent) || /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -55,7 +58,7 @@ export default class PoseNet{
   async setupCamera() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error(
-          'Browser API navigator.mediaDevices.getUserMedia not available');
+        'Browser API navigator.mediaDevices.getUserMedia not available');
     }
 
     const video = this.htmlElements.video;
@@ -77,6 +80,69 @@ export default class PoseNet{
       video.onloadedmetadata = () => {
         resolve(video);
       };
+    });
+  }
+
+  addTopPoints(topPoints) {
+    let nose = topPoints.find((point) => point.part === 'nose');
+    let leftEar = topPoints.find((point) => point.part === 'leftEar');
+    let rightEar = topPoints.find((point) => point.part === 'rightEar');
+    let leftShoulder = topPoints.find((point) => point.part === 'leftShoulder');
+    let rightShoulder = topPoints.find((point) => point.part === 'rightShoulder');
+
+    let leftEarBottom = leftEar;
+    leftEarBottom.position.y = nose.position.y;
+    leftEarBottom.part = 'leftEarBottom';
+
+    let rightEarBottom = rightEar;
+    rightEarBottom.position.y = nose.position.y;
+    rightEarBottom.part = 'rightEarBottom';
+
+    let neckLeft = leftShoulder;
+    neckLeft.position.x = leftEar.position.x;
+    neckLeft.position.y = neckLeft.position.y - (leftShoulder.position.y - nose.position.y) / 2;
+    neckLeft.part = 'neckLeft';
+
+    let neckRight = rightShoulder;
+    neckRight.position.x = rightEar.position.x;
+    neckRight.position.y = neckRight.position.y - (rightShoulder.position.y - nose.position.y) / 2;
+    neckRight.part = 'neckRight';
+
+    topPoints.push(leftEarBottom);
+    topPoints.push(rightEarBottom);
+    topPoints.push(neckLeft);
+    topPoints.push(neckRight);
+
+    return topPoints;
+  }
+
+  loadImages() {
+    this.images.forEach((image, index) => {
+      jimg = jimp.read(image.url).then((jimg) => {
+        this.images[i].img = jimp;
+      }).catch((err) => {
+        console.error(err);
+      });
+    });
+  }
+
+  drawImages(ctx, topPoints) {
+    this.images.forEach((image) => {
+      let leftEarBottom = topPoints.find((point) => point.part === 'leftEarBottom');
+      let rightEarBottom = topPoints.find((point) => point.part === 'rightEarBototm');
+      if (image.type.includes('stud')) {
+        let imageObject = image.img.bitmap.data;
+        ctx.drawImage(imageObject, leftEarBottom.position.x, leftEarBottom.position.y);
+        ctx.drawImage(imageObject, rightEarBottom.position.x, rightEarBottom.position.y);
+      } else if (image.type.includes('earring')) {
+
+      } else if (image.type.includes('necklace')) {
+
+      } else if (image.type.includes('bracelet')) {
+
+      } else if (image.type.includes('ring')) {
+
+      }
     });
   }
 
@@ -123,43 +189,16 @@ export default class PoseNet{
       // For each pose (i.e. person) detected in an image, loop through the poses
       // and draw the resulting skeleton and keypoints if over certain confidence
       // scores
-      poses.forEach(({score, keypoints}) => {
+      poses.forEach(({ score, keypoints }) => {
         if (score >= minPoseConfidence) {
           self.transform.updateKeypoints(keypoints, minPartConfidence);
           const head = self.transform.head();
-          var topPoints = keypoints.slice(0, 7);
-          var nose = topPoints.find(point => point.part === 'nose');
-          var leftEar = topPoints.find(point => point.part === 'leftEar');
-          var rightEar = topPoints.find(point => point.part === 'rightEar');
-          var leftShoulder = topPoints.find(point => point.part === 'leftShoulder');
-          var rightShoulder = topPoints.find(point => point.part === 'rightShoulder');
-
-          var leftEarBottom = leftEar;
-          leftEarBottom.position.y = nose.position.y;
-          leftEarBottom.part = 'leftEarBottom';
-
-          var rightEarBottom = rightEar;
-          rightEarBottom.position.y = nose.position.y;
-          rightEarBottom.part = 'rightEarBottom';
-
-          var neckLeft = leftShoulder;
-          neckLeft.position.x = leftEar.position.x;
-          neckLeft.position.y = neckLeft.position.y - (leftShoulder.position.y - nose.position.y) / 2;
-          neckLeft.part = 'neckLeft';
-
-          var neckRight = rightShoulder;
-          neckRight.position.x = rightEar.position.x;
-          neckRight.position.y = neckRight.position.y - (rightShoulder.position.y - nose.position.y) / 2;
-          neckRight.part = 'neckRight';
-
-          topPoints.push(leftEarBottom);
-          topPoints.push(rightEarBottom);
-          topPoints.push(neckLeft);
-          topPoints.push(neckRight);
-
-
+          let topPoints = keypoints.slice(0, 7);
+          topPoints = addTopPoints(topPoints);
+          drawImages(ctx, topPoints);
           const shouldMoveFarther = drawKeypoints(topPoints, minPartConfidence, ctx);
-          if (shouldMoveFarther){
+
+          if (shouldMoveFarther) {
             ctx.font = "30px Arial";
             ctx.fillText("Please Move Farther", Math.round(videoHeight / 2) - 100, Math.round(videoWidth / 2));
           }
@@ -173,14 +212,14 @@ export default class PoseNet{
   }
 
   /** Loads the PoseNet model weights with architecture 0.75 */
-  async loadNetwork(){
+  async loadNetwork() {
     this.net = await posenet.load();
   }
 
   /**
    * Starts predicting human pose from webcam
    */
-  async startPrediction() {    
+  async startPrediction() {
     let video;
     try {
       video = await this.loadVideo();

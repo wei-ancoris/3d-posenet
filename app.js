@@ -33,7 +33,7 @@ class App extends React.Component {
      */
     async componentDidMount() {
         this.joints = new Joints();
-        this.posenet = new PoseNet(this.joints, this.refs);
+        this.posenet = new PoseNet(this.joints, this.refs, images);
         await this.posenet.loadNetwork();
         this.setState({loading: false});
         this.posenet.startPrediction().then((webcam) => {
@@ -57,7 +57,7 @@ class App extends React.Component {
                         <div className="float-right"
                             style={{display:this.state.loading ? 'none' : 'block'}}>
                             <video ref="video" id="video" playsInline/>
-                            <canvas ref="output" width={500} height={500} style={{ display: this.state.webcam ? 'block' : 'none' }}/>
+                            <canvas ref="output" width={480} height={640} style={{ display: this.state.webcam ? 'block' : 'none' }}/>
                             {/* <h1>Move Farther</h1> */}
                             {!this.state.webcam && <WeCamAccess/>}
                         </div>
