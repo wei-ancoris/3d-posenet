@@ -12,18 +12,22 @@
     "@tensorflow-models/posenet": "0.1.2",
     "@tensorflow/tfjs": "0.11.4",
     "babylonjs": "^3.2.0",
+    "is-buffer": "^2.0.4",
+    "jimp": "^0.9.2",
     "markdown": "^0.5.0",
     "react": "^16.4.2",
     "react-dom": "^16.4.2",
     "react-loading": "^2.0.3"
   },
   "scripts": {
-    "watch": "NODE_ENV=development BPATH=dist parcel --no-hmr --open index.html ",
-    "build": "NODE_ENV=production BPATH=3d-posenet parcel build index.html  --no-minify --public-url ./",
+    "watch": "NODE_ENV=development BPATH=dist parcel ./index.html --no-hmr --open",
+    "build": "NODE_ENV=production BPATH=3d-posenet parcel build ./index.html  --no-minify --public-url ./",
     "build-camera": "NODE_ENV=production parcel build camera.html  --no-minify --public-url ./",
     "lint": "eslint ."
   },
   "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-plugin-transform-react-jsx": "^6.24.1",
     "babel-plugin-transform-runtime": "~6.23.0",
     "babel-polyfill": "~6.26.0",
     "babel-preset-env": "~1.6.1",
@@ -32,7 +36,7 @@
     "dat.gui": "^0.7.1",
     "eslint": "^4.19.1",
     "eslint-config-google": "^0.9.1",
-    "parcel-bundler": "~1.6.2"
+    "parcel-bundler": "^1.12.4"
   },
   "eslintConfig": {
     "extends": "google",

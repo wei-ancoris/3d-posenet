@@ -118,8 +118,9 @@ export default class PoseNet {
 
   loadImages() {
     this.images.forEach((image, index) => {
-      jimg = jimp.read(image.url).then((jimg) => {
-        this.images[i].img = jimp;
+      console.log(image.url);
+      jimp.read(image.url).then((jImg) => {
+        this.images[index].jImg = jImg;
       }).catch((err) => {
         console.error(err);
       });
@@ -127,13 +128,18 @@ export default class PoseNet {
   }
 
   drawImages(ctx, topPoints) {
+    const self = this;
     this.images.forEach((image) => {
       let leftEarBottom = topPoints.find((point) => point.part === 'leftEarBottom');
       let rightEarBottom = topPoints.find((point) => point.part === 'rightEarBototm');
+      
       if (image.type.includes('stud')) {
-        let imageObject = image.img.bitmap.data;
-        ctx.drawImage(imageObject, leftEarBottom.position.x, leftEarBottom.position.y);
-        ctx.drawImage(imageObject, rightEarBottom.position.x, rightEarBottom.position.y);
+        if (leftEarBottom) {
+          self.drawJimp(ctx, image.jImg, leftEarBottom.position);
+        }
+        if (rightEarBottom) {
+          self.drawJimp(ctx, image.jImg, rightEarBottom.position);
+        }
       } else if (image.type.includes('earring')) {
 
       } else if (image.type.includes('necklace')) {
@@ -143,6 +149,20 @@ export default class PoseNet {
       } else if (image.type.includes('ring')) {
 
       }
+    });
+  }
+
+  async drawJimp(ctx, jimpImage, position) {
+    if (! jimpImage || ! position) {
+      return;
+    }
+    await jimpImage.resize(23, 30);
+    let img = new Image(jimpImage.bitmap.width, jimpImage.bitmap.height);
+    img.onload = () => {
+      ctx.drawImage(img, parseInt(position.x), parseInt(position.y));
+    };
+    jimpImage.getBase64(Jimp.AUTO, (err, src) => {
+      img.src = src;
     });
   }
 
@@ -194,8 +214,8 @@ export default class PoseNet {
           self.transform.updateKeypoints(keypoints, minPartConfidence);
           const head = self.transform.head();
           let topPoints = keypoints.slice(0, 7);
-          topPoints = addTopPoints(topPoints);
-          drawImages(ctx, topPoints);
+          topPoints = self.addTopPoints(topPoints);
+          self.drawImages(ctx, topPoints);
           const shouldMoveFarther = drawKeypoints(topPoints, minPartConfidence, ctx);
 
           if (shouldMoveFarther) {
