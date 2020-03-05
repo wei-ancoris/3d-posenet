@@ -21,7 +21,8 @@
   },
   "scripts": {
     "watch": "NODE_ENV=development BPATH=dist parcel ./index.html --no-hmr --open",
-    "build": "NODE_ENV=production BPATH=tryon parcel build ./index.html  --no-minify --public-url ./",
+    "build": "NODE_ENV=production BPATH=dist parcel build ./index.html  --no-minify --public-url ./",
+    "postbuild": "sh post_build.sh",
     "build-camera": "NODE_ENV=production parcel build camera.html  --no-minify --public-url ./",
     "lint": "eslint ."
   },
