@@ -112,6 +112,10 @@ export default class PoseNet {
     });
   }
 
+  updateImages(images) {
+    this.images = images;
+  }
+
   decimal(num) {
     //num = num / 10;
     //return Math.round(num) * 10;
@@ -121,6 +125,9 @@ export default class PoseNet {
   drawImages(ctx, topPoints) {
     const self = this;
     this.images.forEach((image) => {
+      if (image.enabled === 'false') {
+        return;
+      }
       let leftEar = topPoints.find((point) => point.part === 'leftEar' && point.score > self.state.singlePoseDetection.minPartConfidence);
       let rightEar = topPoints.find((point) => point.part === 'rightEar' && point.score > self.state.singlePoseDetection.minPartConfidence);
       let jImg = image.jImg;

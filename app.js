@@ -32,6 +32,7 @@ class App extends React.Component {
      * initializes neural network model, graphics engine, and webcam.
      */
     async componentDidMount() {
+        var self = this;
         this.joints = new Joints();
         this.posenet = new PoseNet(this.joints, this.refs, images);
         await this.posenet.loadNetwork();
@@ -39,6 +40,22 @@ class App extends React.Component {
         this.posenet.startPrediction().then((webcam) => {
             this.setState({ webcam });
         });
+        var imageSelectors = document.getElementsByClassName('tryon-image-selector');
+        imageSelectors.forEach(function(selector) {
+            selector.addEventListener("click", function(){
+                var imageTag = this.getElementsByTagName('img')[0];
+                for (var i = 0; i < images.length; i++) {
+                    images[i].enabled = 'false';
+                }
+                for (var i = 0; i < images.length; i++) {
+                    if (imageTag.src.includes(images[i].url)) {
+                        images[i].enabled = 'true';
+                    }
+                }
+                self.posenet.updateImages(images);
+            });
+        });
+
     }
 
     /** Asks for webcam access if ti was denied */
@@ -50,14 +67,16 @@ class App extends React.Component {
      * React Component's render method for rendering HTML components
      */
     render() {
+        const listItems = window.images.map((image) => <a href="#" className="tryon-image-selector"><img src={image.url} style={{maxHeight: '64px', maxWidth: '64px'}}/></a>);
+
         return (
             <div id="container">
                 <div className="row"  id="row">
                     <div className="col-12">
-                        <div className=""
+                        <div className="text-center"
                             style={{display:this.state.loading ? 'none' : 'block'}}>
                             <video ref="video" id="video" playsInline/>
-                            <canvas ref="output" width={480} height={640} style={{ display: this.state.webcam ? 'block' : 'none' }}/>
+                            <canvas ref="output" width={480} height={640} style={{ display: this.state.webcam ? 'block' : 'none', width: '480px', margin: '0 auto'}}/>
                             {/* <h1>Move Farther</h1> */}
                             {!this.state.webcam && <WeCamAccess/>}
                         </div>
@@ -67,7 +86,10 @@ class App extends React.Component {
                         </div>
                     </div>
                 </div>
-                <div ref="description" id="description"/>
+                <div ref="description" id="description"></div>
+                <div className="row" style={{margin: '0 auto', width: '480px', overflowX: 'auto'}}>
+                    {listItems}
+                </div>
             </div>
         );
     }
