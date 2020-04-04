@@ -101,9 +101,10 @@ export default class PoseNet {
   }
 
   loadImages() {
+    console.log(this.images);
     this.images.forEach((image, index) => {
       jimp.read(image.url).then(async (jImg) => {
-        await jImg.resize(image.realWidth, image.realHeight);
+        await jImg.resize(parseInt(image.width), parseInt(image.height));
         this.images[index].jImg = jImg;
       }).catch((err) => {
         console.error(err);
@@ -124,21 +125,19 @@ export default class PoseNet {
       let rightEar = topPoints.find((point) => point.part === 'rightEar' && point.score > self.state.singlePoseDetection.minPartConfidence);
       let jImg = image.jImg;
       
-      if (image.type.includes('stud')) {
+      if (image.type.includes('stud') || image.type.includes('earring')) {
         if (leftEar) {
           let leftPosition = {x: leftEar.position.x, y: leftEar.position.y};
-          leftPosition.x -= (image.realWidth / 2) - 3;
+          leftPosition.x -= (image.width / 2) - 3;
           leftPosition.y += 10;
           self.drawJimp(ctx, jImg, leftPosition, 'leftEar');
         }
         if (rightEar) {
           let rightPosition = {x: rightEar.position.x, y: rightEar.position.y};
-          rightPosition.x -= (image.realWidth / 2) - 3;
+          rightPosition.x -= (image.width / 2) - 3;
           rightPosition.y += 10;
           self.drawJimp(ctx, jImg, rightPosition, 'rightEar');
         }
-
-      } else if (image.type.includes('earring')) {
 
       } else if (image.type.includes('necklace')) {
 

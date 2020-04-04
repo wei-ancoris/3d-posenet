@@ -53,8 +53,8 @@ class App extends React.Component {
         return (
             <div id="container">
                 <div className="row"  id="row">
-                    <div className="col-7">
-                        <div className="float-right"
+                    <div className="col-12">
+                        <div className=""
                             style={{display:this.state.loading ? 'none' : 'block'}}>
                             <video ref="video" id="video" playsInline/>
                             <canvas ref="output" width={480} height={640} style={{ display: this.state.webcam ? 'block' : 'none' }}/>
